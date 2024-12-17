@@ -205,7 +205,7 @@ internal class SVGACanvasDrawer(videoItem: SVGAVideoEntity, val dynamicItem: SVG
         }
         val bitmapKey = if (imageKey.endsWith(".matte")) imageKey.substring(0, imageKey.length - 6) else imageKey
         val drawingBitmap = (dynamicItem.dynamicImage[bitmapKey] ?: videoItem.imageMap[bitmapKey])
-                ?: return
+            ?: return
         val frameMatrix = shareFrameMatrix(sprite.frameEntity.transform)
         val paint = this.sharedValues.sharedPaint()
         paint.isAntiAlias = videoItem.antiAlias
@@ -234,9 +234,9 @@ internal class SVGACanvasDrawer(videoItem: SVGAVideoEntity, val dynamicItem: SVG
                 val matrixArray = floatArrayOf(0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f)
                 frameMatrix.getValues(matrixArray)
                 listener.onResponseArea(imageKey, matrixArray[2].toInt()
-                        , matrixArray[5].toInt()
-                        , (drawingBitmap.width * matrixArray[0] + matrixArray[2]).toInt()
-                        , (drawingBitmap.height * matrixArray[4] + matrixArray[5]).toInt())
+                    , matrixArray[5].toInt()
+                    , (drawingBitmap.width * matrixArray[0] + matrixArray[2]).toInt()
+                    , (drawingBitmap.height * matrixArray[4] + matrixArray[5]).toInt())
             }
         }
         drawTextOnBitmap(canvas, drawingBitmap, sprite, frameMatrix)
@@ -296,11 +296,11 @@ internal class SVGACanvasDrawer(videoItem: SVGAVideoEntity, val dynamicItem: SVG
                         Int.MAX_VALUE
                     }
                     StaticLayout.Builder
-                            .obtain(it.text, 0, it.text.length, it.paint, drawingBitmap.width)
-                            .setAlignment(it.alignment)
-                            .setMaxLines(lineMax)
-                            .setEllipsize(TextUtils.TruncateAt.END)
-                            .build()
+                        .obtain(it.text, 0, it.text.length, it.paint, drawingBitmap.width)
+                        .setAlignment(it.alignment)
+                        .setMaxLines(lineMax)
+                        .setEllipsize(TextUtils.TruncateAt.END)
+                        .build()
                 } else {
                     StaticLayout(it.text, 0, it.text.length, it.paint, drawingBitmap.width, it.alignment, it.spacingMultiplier, it.spacingAdd, false)
                 }
@@ -406,8 +406,8 @@ internal class SVGACanvasDrawer(videoItem: SVGAVideoEntity, val dynamicItem: SVG
                         shape.styles?.lineDash?.let {
                             if (it.size == 3 && (it[0] > 0 || it[1] > 0)) {
                                 paint.pathEffect = DashPathEffect(floatArrayOf(
-                                        (if (it[0] < 1.0f) 1.0f else it[0]) * scale,
-                                        (if (it[1] < 0.1f) 0.1f else it[1]) * scale
+                                    (if (it[0] < 1.0f) 1.0f else it[0]) * scale,
+                                    (if (it[1] < 0.1f) 0.1f else it[1]) * scale
                                 ), it[2] * scale)
                             }
                         }
@@ -484,6 +484,8 @@ internal class SVGACanvasDrawer(videoItem: SVGAVideoEntity, val dynamicItem: SVG
         private val shareMattePaint = Paint()
         private var shareMatteCanvas: Canvas? = null
         private var sharedMatteBitmap: Bitmap? = null
+        private var lastSharedWidth = 0
+        private var lastSharedHeight = 0
 
         fun sharedPaint(): Paint {
             sharedPaint.reset()
@@ -520,14 +522,16 @@ internal class SVGACanvasDrawer(videoItem: SVGAVideoEntity, val dynamicItem: SVG
         }
 
         fun shareMatteCanvas(width: Int, height: Int): Canvas {
-            if (shareMatteCanvas == null) {
+            //避免每帧都重建bitmap和canvas
+            if (shareMatteCanvas == null || width != lastSharedWidth || height != lastSharedHeight) {
                 sharedMatteBitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ALPHA_8)
-//                shareMatteCanvas = Canvas(sharedMatteBitmap)
+                shareMatteCanvas = Canvas(sharedMatteBitmap!!)
+                lastSharedWidth = width
+                lastSharedHeight = height
+            } else {
+                shareMatteCanvas!!.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR)
             }
-//            val matteCanvas = shareMatteCanvas as Canvas
-//            matteCanvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR)
-//            return matteCanvas
-            return Canvas(sharedMatteBitmap)
+            return shareMatteCanvas!!
         }
     }
 
